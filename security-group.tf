@@ -1,6 +1,8 @@
+## SECURITY GROUPS 
+# security group for ec2 access
 resource "aws_security_group" "allow_http" {
   name        = "allow_http"
-  description = "Allow http inbound traffic and all outbound traffic"
+  description = "Allow trafiic on port 80"
   vpc_id      = aws_vpc.ada_vpc.id
 
   tags = {
@@ -8,68 +10,50 @@ resource "aws_security_group" "allow_http" {
   }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "allow_http_ipv4" {
+# security group for acess http
+resource "aws_vpc_security_group_ingress_rule" "allow_http_rule" {
   security_group_id = aws_security_group.allow_http.id
-  cidr_ipv4         = aws_vpc.ada_vpc.id
-  from_port         = 80
-  ip_protocol       = "tcp"
-  to_port           = 80
-}
 
-
-resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
-  security_group_id = aws_security_group.allow_http.id
-  cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1" # semanticamente, -1 significa todos os protocolos.
-}
-
-# Security group for RDS
-resource "aws_security_group" "rds_sg" {
-  name   = "rds_sg"
-  vpc_id = aws_vpc.ada_vpc.id
+  cidr_ipv4   = "10.0.0.0/16"
+  from_port   = 80
+  ip_protocol = "tcp"
+  to_port     = 80
 
   tags = {
-    Name = "rds_sg"
+    Name = "allow_http_rule"
   }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "rds_sg" {
-  security_group_id = aws_security_group.rds_sg.id
-  cidr_ipv4         = aws_vpc.ada_vpc.cidr_block
-  from_port         = 3306
-  ip_protocol       = "tcp"
-  to_port           = 3306
+#security group for ec2 egress
+resource "aws_vpc_security_group_egress_rule" "allow_all_egress" {
+  security_group_id = aws_security_group.allow_http.id
+
+  cidr_ipv4   = "0.0.0.0/0"
+  ip_protocol = "-1"  # semanticamente, -1 significa todos os protocolos.
+
+  tags = {
+    Name = "allow_all_egress"
+  }
 }
 
-resource "aws_vpc_security_group_egress_rule" "rds_sg" {
-  security_group_id = aws_security_group.rds_sg.id
-  from_port         = 0
-  to_port           = 0
-  ip_protocol       = "-1"
-  cidr_ipv4         = "10.0.0.0/16"
-}
-
-resource "aws_security_group" "lb_sg" {
-  name        = "loadbalance_sg"
+# security group for load balancer
+resource "aws_security_group" "allow_lb" {
+  name        = "allow_lb"
+  description = "Allow trafiic http "
   vpc_id      = aws_vpc.ada_vpc.id
 
   tags = {
-    Name = "lb_sg"
+    Name = "allow_lb"
   }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "lb_sg" {
-  security_group_id = aws_security_group.lb_sg.id
-  cidr_ipv4         = aws_vpc.ada_vpc.cidr_block
-  from_port         = 80
-  ip_protocol       = "tcp"
-  to_port           = 80
-}
+# security group for load balancer ingress
+resource "aws_security_group_rule" "load_balancer_allow_http" {
+  cidr_blocks = [aws_vpc.ada_vpc.cidr_block]
 
-resource "aws_vpc_security_group_egress_rule" "lb_sg" {
-  security_group_id = aws_security_group.lb_sg.id
-  from_port         = 0
-  to_port           = 0
-  ip_protocol       = "-1"
-  cidr_ipv4         = "0.0.0.0/0"
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "-1"
+  security_group_id = aws_security_group.allow_lb.id
 }

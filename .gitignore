@@ -1,3 +1,25 @@
-ada.tfvars
+*.tfvars
 
-variable.tf
+*variable.tf
+
+*.tfstate.terraform/
+
+.terraform/
+
+*.tfvars.json
+
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+planfile
+*.tfplan
+
+.aws/credentials
+.aws/config
+
+*.log
+
+crash.log
+.terraform.lock.hcl
