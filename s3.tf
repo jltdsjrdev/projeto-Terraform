@@ -8,7 +8,7 @@ resource "aws_s3_bucket" "aws_s3_bucket" {
 }
 
 resource "aws_s3_bucket" "s3_bucket" {
-  bucket = var.AWS_S3_BUCKET_NAME
+  bucket = aws_s3_bucket.aws_s3_bucket.id
 
   tags = {
     Name = "s3_bucket"
@@ -16,7 +16,7 @@ resource "aws_s3_bucket" "s3_bucket" {
 }
 
 resource "aws_s3_bucket_public_access_block" "s3_bucket_public_access_block" {
-  bucket                  = aws_s3_bucket.s3_bucket.id
+  bucket                  = aws_s3_bucket.s3_bucket
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -26,5 +26,5 @@ resource "aws_s3_bucket_public_access_block" "s3_bucket_public_access_block" {
 # policy to allow access from another account
 resource "aws_s3_bucket_policy" "allow_access_from_another_account" {
   bucket = aws_s3_bucket.s3_bucket.id
-  policy = 
+  policy = local.policy
 }
