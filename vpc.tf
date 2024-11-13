@@ -1,12 +1,13 @@
+# VPC
 resource "aws_vpc" "ada_vpc" {
   cidr_block = var.cidrvpc
-
   tags = {
     vpc  = "ada"
     name = "terraform-ada"
   }
 }
 
+# Subnets Públicas
 resource "aws_subnet" "publica-a" {
   vpc_id            = aws_vpc.ada_vpc.id
   cidr_block        = var.cidrpublica-a
@@ -21,7 +22,6 @@ resource "aws_subnet" "publica-b" {
   vpc_id            = aws_vpc.ada_vpc.id
   cidr_block        = var.cidrpublica-b
   availability_zone = "us-east-1b"
-
   tags = {
     name = "publica-b"
   }
@@ -32,13 +32,13 @@ resource "aws_subnet" "publica-c" {
   vpc_id            = aws_vpc.ada_vpc.id
   cidr_block        = var.cidrpublica-c
   availability_zone = "us-east-1c"
-
   tags = {
     name = "publica-c"
   }
   depends_on = [aws_vpc.ada_vpc]
 }
 
+# Internet Gateway
 resource "aws_internet_gateway" "gw-ada" {
   vpc_id = aws_vpc.ada_vpc.id
 
@@ -47,6 +47,7 @@ resource "aws_internet_gateway" "gw-ada" {
   }
 }
 
+# Subnets Privadas
 resource "aws_subnet" "privada-a" {
   vpc_id            = aws_vpc.ada_vpc.id
   cidr_block        = "10.0.5.0/24"
@@ -61,7 +62,6 @@ resource "aws_subnet" "privada-b" {
   vpc_id            = aws_vpc.ada_vpc.id
   cidr_block        = "10.0.6.0/24"
   availability_zone = "us-east-1b"
-
   tags = {
     name = "privada-app-b"
   }
@@ -77,68 +77,85 @@ resource "aws_subnet" "privada-c" {
   }
   depends_on = [aws_vpc.ada_vpc]
 }
+resource "aws_subnet" "dados-a" {
+  vpc_id            = aws_vpc.ada_vpc.id
+  cidr_block        = "10.0.8.0/24"
+  availability_zone = "us-east-1a"
 
-resource "aws_nat_gateway" "aws_nat_gateway_a" {
-  allocation_id = aws_eip.nat_eip_a.id
+  tags = {
+    Name = "dados-a"
+  }
+  depends_on = [aws_vpc.ada_vpc]
+}
+resource "aws_subnet" "dados-b" {
+  vpc_id            = aws_vpc.ada_vpc.id
+  cidr_block        = "10.0.9.0/24"
+  availability_zone = "us-east-1b"
+
+  tags = {
+    Name = "dados-b"
+  }
+  depends_on = [aws_vpc.ada_vpc]
+}
+
+resource "aws_subnet" "dados-c" {
+  vpc_id            = aws_vpc.ada_vpc.id
+  cidr_block        = "10.0.10.0/24"
+  availability_zone = "us-east-1c"
+
+  tags = {
+    Name = "dados-c"
+  }
+  depends_on = [aws_vpc.ada_vpc]
+}
+
+# Elastic IPs para NAT Gateways
+resource "aws_eip" "eip_nat_a" {
+  depends_on = [aws_internet_gateway.gw-ada]
+}
+
+resource "aws_eip" "eip_nat_b" {
+  depends_on = [aws_internet_gateway.gw-ada]
+}
+
+resource "aws_eip" "eip_nat_c" {
+  depends_on = [aws_internet_gateway.gw-ada]
+}
+
+# NAT Gateways
+resource "aws_nat_gateway" "nat_gateway_a" {
+  allocation_id = aws_eip.eip_nat_a.id
   subnet_id     = aws_subnet.publica-a.id
-
   tags = {
     Name = "NAT-A"
   }
-
-  # To ensure proper ordering, it is recommended to add an explicit dependency
-  # on the Internet Gateway for the VPC.
   depends_on = [aws_internet_gateway.gw-ada]
 }
 
-resource "aws_nat_gateway" "nat_eip_a" {
-
-}
-resource "aws_nat_gateway" "aws_nat_gateway_b" {
-  #allocation_id = aws_eip
-  subnet_id = aws_subnet.publica-b.id
-
+resource "aws_nat_gateway" "nat_gateway_b" {
+  allocation_id = aws_eip.eip_nat_b.id
+  subnet_id     = aws_subnet.publica-b.id
   tags = {
     Name = "NAT-B"
   }
-
-  # To ensure proper ordering, it is recommended to add an explicit dependency
-  # on the Internet Gateway for the VPC.
   depends_on = [aws_internet_gateway.gw-ada]
 }
 
-resource "aws_nat_gateway" "aws_nat_gateway_c" {
-  allocation_id = aws_eip
+resource "aws_nat_gateway" "nat_gateway_c" {
+  allocation_id = aws_eip.eip_nat_c.id
   subnet_id     = aws_subnet.publica-c.id
-
   tags = {
     Name = "NAT-C"
   }
-
-  # To ensure proper ordering, it is recommended to add an explicit dependency
-  # on the Internet Gateway for the VPC.
   depends_on = [aws_internet_gateway.gw-ada]
 }
 
-#Elastic ip
-resource "aws_eip" "eip-nat-publica-a" {
-  depends_on = [aws_internet_gateway.gw-ada]
-}
-
-resource "aws_eip" "eip-nat-publica-b" {
-  depends_on = [aws_internet_gateway.gw-ada]
-}
-
-resource "aws_eip" "eip-nat-publica-c" {
-  depends_on = [aws_internet_gateway.gw-ada]
-}
-
-resource "aws_route_table" "public" {
+# Tabelas de Rota para Subnets Públicas
+resource "aws_route_table" "route-public" {
   vpc_id = aws_vpc.ada_vpc.id
-
-  route = {
+  route {
     cidr_block = "10.0.0.0/16"
-    gateway_id = "aws"
+    gateway_id = "local"
   }
   route {
     cidr_block = "0.0.0.0/0"
@@ -146,77 +163,103 @@ resource "aws_route_table" "public" {
   }
 }
 
-resource "aws_route_table_association" "publica-a" {
-  route_table_id = aws_route_table.public.id
-}
-resource "aws_route_table_association" "publica-b" {
-  route_table_id = aws_route_table.public.id
-}
-resource "aws_route_table_association" "publica-c" {
-  route_table_id = aws_route_table.public.id
+resource "aws_route_table" "banco" {
+  vpc_id = aws_vpc.ada_vpc.id
+
+  route {
+    cidr_block = "10.0.0.0/16"
+    gateway_id = "local"
+  }
 }
 
-resource "aws_route_table" "aws_route_table_privada-a" {
+resource "aws_route_table_association" "dados-a" {
+  subnet_id      = aws_subnet.dados-a.id
+  route_table_id = aws_route_table.banco.id
+}
+resource "aws_route_table_association" "dados-b" {
+  subnet_id      = aws_subnet.dados-b.id
+  route_table_id = aws_route_table.banco.id
+}
+resource "aws_route_table_association" "dados-c" {
+  subnet_id      = aws_subnet.dados-c.id
+  route_table_id = aws_route_table.banco.id
+}
+
+resource "aws_route_table_association" "publica-a" {
+  subnet_id      = aws_subnet.publica-a.id
+  route_table_id = aws_route_table.route-public.id
+}
+
+resource "aws_route_table_association" "publica-b" {
+  subnet_id      = aws_subnet.publica-b.id
+  route_table_id = aws_route_table.route-public.id
+}
+
+resource "aws_route_table_association" "publica-c" {
+  subnet_id      = aws_subnet.publica-c.id
+  route_table_id = aws_route_table.route-public.id
+}
+
+# Tabelas de Rota para Subnets Privadas
+resource "aws_route_table" "privada-a" {
   vpc_id = aws_vpc.ada_vpc.id
   route {
-    cidr_block     = aws_internet_gateway.gw-ada.id
-    nat_gateway_id = aws_nat_gateway.aws_nat_gateway_a.id
+    cidr_block     = "10.0.0.0/16"
+    nat_gateway_id = aws_nat_gateway.nat_gateway_a.id
   }
   route {
-    cidr_block = var.cidrvpc
-    gateway_id = "local"
+    cidr_block     = "0.0.0.0/16"
+    nat_gateway_id = aws_nat_gateway.nat_gateway_a.id
   }
   tags = {
     name = "route-table-privada-a"
   }
 }
-resource "aws_route_table" "aws_route_table_privada-b" {
+
+resource "aws_route_table" "privada-b" {
   vpc_id = aws_vpc.ada_vpc.id
   route {
-    cidr_block     = aws_internet_gateway.gw-ada.id
-    nat_gateway_id = aws_nat_gateway.aws_nat_gateway_b.id
+    cidr_block = "10.0.0.0/16"
+    gateway_id = "local"
   }
   route {
-    cidr_block = var.cidrvpc
-    gateway_id = "local"
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_gateway_b.id
   }
   tags = {
     name = "route-table-privada-b"
   }
 }
-resource "aws_route_table" "aws_route_table_privada-c" {
+
+resource "aws_route_table" "privada-c" {
   vpc_id = aws_vpc.ada_vpc.id
   route {
-    cidr_block     = aws_internet_gateway.gw-ada.id
-    nat_gateway_id = aws_nat_gateway.aws_nat_gateway_c.id
+    cidr_block = "10.0.0.0/16"
+    gateway_id = "local"
+
   }
   route {
-    cidr_block = var.cidrvpc
-    gateway_id = "local"
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_gateway_c.id
+
   }
   tags = {
     name = "route-table-privada-c"
   }
 }
 
-resource "aws_route_table_association" "route-table-privada-a" {
+# Associação de Tabelas de Rota Privadas
+resource "aws_route_table_association" "app-a" {
   subnet_id      = aws_subnet.privada-a.id
-  route_table_id = aws_route_table.aws_route_table_privada-a.id
+  route_table_id = aws_route_table.privada-a.id
 }
 
 resource "aws_route_table_association" "route-table-privada-b" {
   subnet_id      = aws_subnet.privada-b.id
-  route_table_id = aws_route_table.aws_route_table_privada-b.id
+  route_table_id = aws_route_table.privada-b.id
 }
+
 resource "aws_route_table_association" "route-table-privada-c" {
   subnet_id      = aws_subnet.privada-c.id
-  route_table_id = aws_route_table.aws_route_table_privada-c.id
-}
-
-resource "aws_route_table" "banco" {
-  vpc_id = aws_vpc.ada_vpc.id
-
-  route {
-
-  }
+  route_table_id = aws_route_table.privada-c.id
 }
