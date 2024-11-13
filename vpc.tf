@@ -204,12 +204,12 @@ resource "aws_route_table_association" "publica-c" {
 resource "aws_route_table" "privada-a" {
   vpc_id = aws_vpc.ada_vpc.id
   route {
-    cidr_block     = "10.0.0.0/16"
+    cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.nat_gateway_a.id
   }
   route {
-    cidr_block     = "0.0.0.0/16"
-    nat_gateway_id = aws_nat_gateway.nat_gateway_a.id
+    cidr_block     = "10.0.0.0/16"
+    gateway_id = "local"
   }
   tags = {
     name = "route-table-privada-a"
@@ -254,12 +254,12 @@ resource "aws_route_table_association" "app-a" {
   route_table_id = aws_route_table.privada-a.id
 }
 
-resource "aws_route_table_association" "route-table-privada-b" {
+resource "aws_route_table_association" "app-b" {
   subnet_id      = aws_subnet.privada-b.id
   route_table_id = aws_route_table.privada-b.id
 }
 
-resource "aws_route_table_association" "route-table-privada-c" {
+resource "aws_route_table_association" "app-c" {
   subnet_id      = aws_subnet.privada-c.id
   route_table_id = aws_route_table.privada-c.id
 }
