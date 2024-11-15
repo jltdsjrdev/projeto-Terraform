@@ -7,10 +7,10 @@ locals {
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
     domain_name = aws_s3_bucket.aws_s3_bucket.bucket_regional_domain_name
-    origin_id   = "s3-my-bucket"
+    origin_id   = "my-bucket-jr"
 
     s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.cloudfront_access_identity.id
+      origin_access_identity = "origin-access-identity/cloudfront/${aws_cloudfront_origin_access_identity.cloudfront_access_identity.id}"
     }
   }
 

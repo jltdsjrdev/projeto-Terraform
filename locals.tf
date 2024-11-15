@@ -1,7 +1,8 @@
 data "aws_caller_identity" "current" {}
 
+# Referencia a distribuição do CloudFront para o bucket S3
 data "aws_cloudfront_distribution" "current" {
-  id = aws_cloudfront_distribution.example_distribution_s3.id  # Certifique-se de que o ID da distribuição esteja correto
+  id = aws_cloudfront_distribution.s3_distribution.id  # Corrigido: referência para o recurso correto
 }
 
 locals {
@@ -9,17 +10,17 @@ locals {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
+        Effect    = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::397546002821:root"  # Substitua 123456789012 pelo ID da outra conta
+          AWS = "arn:aws:iam::397546002821:root"  # Substitua pelo ID da conta correta
         }
-        Action = [
+        Action   = [
           "s3:GetObject",
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::${aws_s3_bucket.aws_s3_bucket.id}",
-          "arn:aws:s3:::${aws_s3_bucket.aws_s3_bucket.id}/*"
+          "arn:aws:s3:::${aws_s3_bucket.aws_s3_bucket.bucket}",
+          "arn:aws:s3:::${aws_s3_bucket.aws_s3_bucket.bucket}/*"
         ]
       }
     ]
