@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 # Referencia a distribuição do CloudFront para o bucket S3
 data "aws_cloudfront_distribution" "current" {
-  id = aws_cloudfront_distribution.s3_distribution.id  # Corrigido: referência para o recurso correto
+  id = aws_cloudfront_distribution.s3_distribution.id  
 }
 
 locals {
