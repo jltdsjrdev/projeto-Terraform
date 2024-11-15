@@ -4,7 +4,6 @@ resource "aws_security_group" "allow_http" {
   name        = "allow_http"
   description = "Allow trafiic on port 80"
   vpc_id      = aws_vpc.ada_vpc.id
-
   tags = {
     Name = "allow_http"
   }
