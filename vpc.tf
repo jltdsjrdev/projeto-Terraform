@@ -10,7 +10,7 @@ resource "aws_vpc" "ada_vpc" {
 # Subnets Públicas
 resource "aws_subnet" "publica-a" {
   vpc_id            = aws_vpc.ada_vpc.id
-  cidr_block        = var.cidrpublica-a
+  cidr_block        = var.cidrpublica-a 
   availability_zone = "us-east-1a"
   tags = {
     name = "publica-a"
